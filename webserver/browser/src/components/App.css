@@ -1,0 +1,21 @@
+body {
+  background-color: #202020;
+  color: #e0d7d1;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  height: 100vh;
+  padding: 0.5rem;
+  box-sizing: border-box;
+
+  font-size: 1rem;
+}
+
+.monitor {
+  overflow-y: auto;
+  min-height: 0;
+  background-color: #181818;
+  font-size: 1rem;
+}
