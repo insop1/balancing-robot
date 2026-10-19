@@ -27,8 +27,11 @@ function unpack(buf: Buffer): RoboData | null {
 
 function sendToBrowser(msg: object) {
   const json = JSON.stringify(msg);
+
   for (const client of wss.clients) {
-    if (client.readyState === WebSocket.OPEN) client.send(json);
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(json);
+    }
   }
 }
 
@@ -41,6 +44,7 @@ udp.on('message', (buf) => {
   const data = unpack(buf);
 
   if(!data) return;
+  console.log(JSON.stringify(data));
 
   // Restart everytime new bootId
   if(data.bootId != lastBoot) {
