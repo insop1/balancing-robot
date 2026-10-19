@@ -1,12 +1,18 @@
+:root {
+  --bg0: #181818;
+  --bg1: #202020;
+  --fg0: #e0d9d3;
+}
+
 body {
-  background-color: #202020;
-  color: #e0d7d1;
+  background-color: var(--bg1);
+  color: var(--fg0);
 }
 
 .layout {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  height: 100vh;
+  height: 90vh;
   padding: 0.5rem;
   box-sizing: border-box;
 
@@ -16,6 +22,6 @@ body {
 .monitor {
   overflow-y: auto;
   min-height: 0;
-  background-color: #181818;
+  background-color: var(--bg0);
   font-size: 1rem;
 }

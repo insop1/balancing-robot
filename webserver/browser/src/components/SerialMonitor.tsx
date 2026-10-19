@@ -1,13 +1,15 @@
 import React from 'react';
 import './SerialMonitor.css';
 import { subscribe } from '../websocket.ts';
+import { MsgType, type ServerMsg } from '../../../shared/messages.ts';
 
 export function SerialMonitor() {
   const [lines, setLines] = React.useState<string[]>([]);
   
   React.useEffect(() => {
     return subscribe((msg) => {
-      setLines((prev) => [...prev, msg]);
+      if(msg.type !== MsgType.Log) return;
+      setLines((prev) => [...prev, msg.text]);
     });
   }, [])
 
