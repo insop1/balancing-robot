@@ -16,8 +16,8 @@ connect();
 
 export function send(msg: object) {
   if(ws.readyState === WebSocket.OPEN) {
-    const json = JSON.stringify(msg);
-    ws.send(json);
+    const data = JSON.stringify(msg);
+    ws.send(data);
   }
 }
 

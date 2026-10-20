@@ -3,10 +3,16 @@ import dgram from 'node:dgram';
 import { WebSocketServer } from 'ws';
 import { createServer } from 'node:http';
 import { join } from 'node:path'
-import { type RoboData, MsgType } from '../../shared/messages.ts'
+import { type RoboData, type ServerMsg } from '../../shared/messages.ts'
 
-let lastSeq: number;
-let lastBoot: number;
+const ROBOT_PORT = 3104;
+const ROBOT_IP = '192.168.4.1'
+
+const serverBootId = crypto.getRandomValues(new Uint32Array(1))[0];
+let serverSeq = 0;
+
+let lastSeq = -1;
+let lastBoot = -1;
 
 const app = express();
 app.use(express.static(join(import.meta.dirname, '../../browser/dist/')));
@@ -33,6 +39,17 @@ function sendToBrowser(msg: object) {
       client.send(json);
     }
   }
+}
+
+function sendToRobot(msg: ServerMsg) {
+  const buf = Buffer.alloc(9 + Buffer.byteLength(msg.text));
+
+  buf.writeUint32LE(serverBootId, 0);
+  buf.writeUint32LE(serverSeq++, 4);
+  buf.writeUint8(msg.type, 8);
+  buf.write(msg.text, 9, 'utf8');
+
+  udp.send(buf, ROBOT_PORT, ROBOT_IP);
 }
 
 udp.on('error', (err) => {
@@ -69,7 +86,22 @@ udp.on('listening', () => {
 
 wss.on('connection', (ws) => {
   console.log('browser connected');
-  ws.on('message', (data) => console.log('browser sent: %s', data));
+  ws.on('message', (data: string) => {
+    let json;
+    try {
+      json = JSON.parse(data);
+    } 
+    catch { return; }
+
+    if(typeof json.type !== 'number' || typeof json.text !== 'string') return;
+    if(Buffer.byteLength(json.text) >= 120) return;
+
+    const serverMsg: ServerMsg = {
+      type: json.type,
+      text: json.text,
+    }
+    sendToRobot(serverMsg);
+  });
   ws.on('close', () => console.log('browser left'));
 });
 
