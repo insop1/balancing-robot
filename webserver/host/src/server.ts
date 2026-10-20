@@ -44,6 +44,7 @@ function sendToBrowser(msg: object) {
 function sendToRobot(msg: ServerMsg) {
   const buf = Buffer.alloc(9 + Buffer.byteLength(msg.text));
 
+  // uint32, uint32, uint8, char* for the robot
   buf.writeUint32LE(serverBootId, 0);
   buf.writeUint32LE(serverSeq++, 4);
   buf.writeUint8(msg.type, 8);
