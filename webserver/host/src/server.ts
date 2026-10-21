@@ -5,7 +5,7 @@ import { createServer } from 'node:http';
 import { join } from 'node:path'
 import { type RoboData, type ServerMsg } from '../../shared/messages.ts'
 
-const ROBOT_PORT = 3104;
+const ROBOT_PORT = 3103;
 const ROBOT_IP = '192.168.4.1'
 
 const serverBootId = crypto.getRandomValues(new Uint32Array(1))[0];
@@ -44,7 +44,7 @@ function sendToBrowser(msg: object) {
 function sendToRobot(msg: ServerMsg) {
   const buf = Buffer.alloc(9 + Buffer.byteLength(msg.text));
 
-  // uint32, uint32, uint8, char* for the robot
+  // uint32, uint32, uint8, char[] for the robot
   buf.writeUint32LE(serverBootId, 0);
   buf.writeUint32LE(serverSeq++, 4);
   buf.writeUint8(msg.type, 8);
@@ -70,7 +70,6 @@ udp.on('message', (buf) => {
     lastSeq = -1;
   }
 
-  // Only accepting newest data sequence
   if(data.seq <= lastSeq) return; 
   lastSeq = data.seq;
 
@@ -95,7 +94,10 @@ wss.on('connection', (ws) => {
     catch { return; }
 
     if(typeof json.type !== 'number' || typeof json.text !== 'string') return;
-    if(Buffer.byteLength(json.text) >= 120) return;
+
+    // Robot is hardcoded to only accept buffer of 64 bytes. 9 of bytes are headers.
+    // So maximum character is 54 + null terminator, which is handled by the esp32
+    if(Buffer.byteLength(json.text) > 54) return;
 
     const serverMsg: ServerMsg = {
       type: json.type,
