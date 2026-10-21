@@ -11,12 +11,16 @@ extern std::atomic<bool> otaActive;
 
 // Network to Control
 enum CommandType : uint8_t {
-    KEY_ARMED,
-    JOYSTICK,
-    CALLIBRATE,
+    KEY_ARMED = 0,
+    JOYSTICK = 1,
+    CALLIBRATE = 2,
 };
 struct Command {
     CommandType type;
+
+    // We're using float because it can still represent bool with 1.0 or 0.0
+    // Some data we get from server are floats
+    // float b is only used for type JOYSTICK. Otherwise, it gets ignored.
     float a;
     float b;
 };
