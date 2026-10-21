@@ -25,14 +25,14 @@ uint16_t laptopPort = 0;
 
 WiFiUDP udp;
 
-bool parseCommand(const TPacket &pck, Command &command) {
+bool parseCommand(const TPacket &pck, Command *command) {
     // return true if parsed
-    switch(command.type) {
+    switch(command->type) {
         case JOYSTICK:
-            sscanf(pck.text, "%f,%f", &command.a, &command.b);
+            sscanf(pck.text, "%f,%f", &command->a, &command->b);
             break;
         case CALLIBRATE:
-            command.a = atof(pck.text);
+            command->a = atof(pck.text);
             break;
         default:
             return false;
@@ -72,7 +72,7 @@ void handlePacket() {
     }
 
     Command command = { (CommandType)pck.type, 0.0f, 0.0f };
-    if(!parseCommand(pck, command)) return;
+    if(!parseCommand(pck, &command)) return;
 
     xQueueSend(toControlQueue, &command, 0);
 }
