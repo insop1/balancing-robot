@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include <atomic>
 
+constexpr uint8_t LOG_TEXT_SIZE = 128;
 extern std::atomic<bool> otaActive;
 
 // Because we splitted the two cores, we'll need a way for them to communicate.
@@ -11,9 +12,9 @@ extern std::atomic<bool> otaActive;
 
 // Network to Control
 enum CommandType : uint8_t {
-    KEY_ARMED = 0,
+    ARMED = 0,
     JOYSTICK = 1,
-    CALLIBRATE = 2,
+    CALIBRATE = 2,
 };
 struct Command {
     CommandType type;
@@ -28,10 +29,10 @@ extern QueueHandle_t toControlQueue;
 
 // Control to Network
 enum LogType : uint8_t {
-    LOG,
+    LOG = 0,
 };
 struct Log {
     LogType type;
-    char text[128];
+    char text[LOG_TEXT_SIZE];
 };
 extern QueueHandle_t toNetworkQueue;

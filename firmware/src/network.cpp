@@ -17,11 +17,14 @@ struct __attribute__((packed)) TPacket {
     char text[UDP_BUF_SIZE - 9];
 };
 
-uint32_t lastBoot = 0;
-uint32_t lastSeq = 0;
+uint32_t robotBootID;
+uint32_t robotSeq = 0;
 
-IPAddress laptopIP;
-uint16_t laptopPort = 0;
+uint32_t serverLastBoot = 0;
+uint32_t serverLastSeq = 0;
+
+IPAddress serverIP;
+uint16_t serverPort = 0;
 
 WiFiUDP udp;
 
@@ -31,9 +34,9 @@ bool parseCommand(const TPacket &pck, Command *command) {
         case JOYSTICK:
             sscanf(pck.text, "%f,%f", &command->a, &command->b);
             break;
-        case CALLIBRATE:
+        case CALIBRATE:
+        case ARMED:
             command->a = atof(pck.text);
-            break;
         default:
             return false;
     }
@@ -47,8 +50,8 @@ void handlePacket() {
 
     if(n < 9) return;
 
-    laptopIP = udp.remoteIP();
-    laptopPort = udp.remotePort();
+    serverIP = udp.remoteIP();
+    serverPort = udp.remotePort();
 
     // Byte offsets
     // 0: bootServerId uint32
@@ -60,15 +63,17 @@ void handlePacket() {
     TPacket pck;
     memcpy(&pck, buf, n + 1);
 
-    if(pck.serverBootId != lastBoot) {
-        lastBoot = pck.serverBootId;
-        lastSeq = pck.serverSeq;
+    if(pck.serverBootId != serverLastBoot) {
+        // If robot restarts, serverLastBoot will be 0.
+        // So we continue from the server's current seq.
+        serverLastBoot = pck.serverBootId;
+        serverLastSeq = pck.serverSeq;
     } 
-    else if(pck.serverSeq <= lastSeq) {
+    else if(pck.serverSeq <= serverLastSeq) {
         return;
     }
     else {
-        lastSeq = pck.serverSeq;
+        serverLastSeq = pck.serverSeq;
     }
 
     Command command = { (CommandType)pck.type, 0.0f, 0.0f };
@@ -77,9 +82,30 @@ void handlePacket() {
     xQueueSend(toControlQueue, &command, 0);
 }
 
+void sendToServer() {
+    Log log;
+    while(xQueueReceive(toNetworkQueue, &log, 0)) {
+        uint8_t out[9 + LOG_TEXT_SIZE];
+        uint8_t textLen = strlen(log.text);
+
+        // Look at byte offsets in handlePacket. same format
+        memcpy(out, &robotBootID, 4);
+        memcpy(out + 4, &robotSeq, 4);
+        out[8] = log.type;
+        memcpy(out + 9, log.text, textLen);
+
+        robotSeq++;
+
+        udp.beginPacket(serverIP, serverPort);
+        udp.write(out, 9 + textLen);
+        udp.endPacket();
+    }
+}
+
 } // namespace
 
 void networkTask(void*) {
+    robotBootID = esp_random();
     udp.begin(UDP_PORT);
 
     while(true) {
@@ -90,10 +116,9 @@ void networkTask(void*) {
             handlePacket();
         }
         
-        if(laptopPort) {
-            // wip
+        if(serverPort) {
+            sendToServer();
         }
-
         vTaskDelay(pdMS_TO_TICKS(5));
     }
 }

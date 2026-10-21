@@ -27,7 +27,7 @@ void setup() {
     });
 
     toControlQueue = xQueueCreate(16, sizeof(Command));
-    toNetworkQueue = xQueueCreate(1, sizeof(Log));
+    toNetworkQueue = xQueueCreate(32, sizeof(Log));
 
     // We are splitting network and control because wifi related stuff could interrupt the robot a little.
     xTaskCreatePinnedToCore(networkTask, "network", 8192, nullptr, 1, nullptr, 0);
