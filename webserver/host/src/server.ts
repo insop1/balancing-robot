@@ -3,7 +3,7 @@ import dgram from 'node:dgram';
 import { WebSocketServer } from 'ws';
 import { createServer } from 'node:http';
 import { join } from 'node:path'
-import { type RoboData, type ServerMsg } from '../../shared/messages.ts'
+import { MsgType, type RoboData, type ServerMsg } from '../../shared/messages.ts'
 
 const ROBOT_PORT = 3103;
 const ROBOT_IP = '192.168.4.1'
@@ -31,7 +31,7 @@ function unpack(buf: Buffer): RoboData | null {
   }
 }
 
-function sendToBrowser(msg: object) {
+function sendToBrowser(msg: ServerMsg) {
   const json = JSON.stringify(msg);
 
   for (const client of wss.clients) {
@@ -71,6 +71,11 @@ udp.on('message', (buf) => {
   }
 
   if(data.seq <= lastSeq) return; 
+  
+  const seqDiff = data.seq - lastSeq;
+  if(lastSeq >= 0 && seqDiff != 1) {
+    sendToBrowser({ type: MsgType.Error, text: `UDP packet loss: ${seqDiff - 1} missed`});
+  }
   lastSeq = data.seq;
 
   sendToBrowser({

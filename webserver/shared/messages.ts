@@ -1,6 +1,6 @@
 export const MsgType = {
   Log: 1,
-  Command: 2,
+  Error: 2,
 } as const;
 
 export type RoboData = {
