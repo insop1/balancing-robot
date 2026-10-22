@@ -1,7 +1,7 @@
 import React from 'react';
 import './SerialMonitor.css';
 import { subscribe } from '../websocket.ts';
-import { MsgType, type ServerMsg } from '../../../shared/messages.ts';
+import { RobotMsgType } from '../../../shared/messages.ts';
 
 export function SerialMonitor() {
   const [lines, setLines] = React.useState<string[]>([]);
@@ -9,7 +9,7 @@ export function SerialMonitor() {
   
   React.useEffect(() => {
     return subscribe((msg) => {
-      if(msg.type !== MsgType.Log) return;
+      if(msg.type !== RobotMsgType.Log) return;
       setLines((prev) => [...prev, msg.text]);
     });
   }, [])

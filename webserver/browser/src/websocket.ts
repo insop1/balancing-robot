@@ -1,4 +1,4 @@
-import { MsgType, type ServerMsg } from '../../shared/messages.ts';
+import { type ServerMsg } from '../../shared/messages.ts';
 
 type Listener = (msg: ServerMsg) => void;
 const listeners = new Set<Listener>();

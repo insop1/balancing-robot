@@ -30,6 +30,7 @@ extern QueueHandle_t toControlQueue;
 // Control to Network
 enum LogType : uint8_t {
     LOG = 0,
+    ERROR = 1,
 };
 struct Log {
     LogType type;

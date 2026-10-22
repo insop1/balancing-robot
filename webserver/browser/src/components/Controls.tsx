@@ -1,14 +1,33 @@
 import React from 'react';
 import { send } from '../websocket.ts';
 import './Controls.css';
-import { MsgType } from '../../../shared/messages.ts';
+import { CommandType } from '../../../shared/messages.ts';
 
 export function Input() {
   const [text, setText] = React.useState('');
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
     if (event.key === 'Enter') {
-      send({ type: MsgType.Log, text: text });
+      const lowerText = text.toLowerCase();
+      const args: string[] = lowerText.split(' ');
+      
+      // currently just a temporary test
+      let cType;
+      switch(args[0]) {
+        case "armed":
+          cType = CommandType.Armed;
+          break;
+        case "joystick":
+          cType = CommandType.Joystick;
+          break;
+        case "calibrate":
+          cType = CommandType.Calibrate;
+          break;
+        default:
+          return;
+      }
+
+      send({ type: cType, text: args[1] });
       setText('');
     }
   }
