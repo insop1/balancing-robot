@@ -28,15 +28,15 @@ uint16_t serverPort = 0;
 
 WiFiUDP udp;
 
-bool parseCommand(const TPacket &pck, Command *command) {
+bool parseCommand(const TPacket &pck, Command *cmd) {
     // return true if parsed
-    switch(command->type) {
+    switch(cmd->type) {
         case JOYSTICK:
-            sscanf(pck.text, "%f,%f", &command->a, &command->b);
+            sscanf(pck.text, "%f,%f", &cmd->a, &cmd->b);
             break;
         case CALIBRATE:
         case ARMED:
-            command->a = atof(pck.text);
+            cmd->a = atof(pck.text);
         default:
             return false;
     }
@@ -76,10 +76,10 @@ void handlePacket() {
         serverLastSeq = pck.serverSeq;
     }
 
-    Command command = { (CommandType)pck.type, 0.0f, 0.0f };
-    if(!parseCommand(pck, &command)) return;
+    Command cmd = { (CommandType)pck.type, 0.0f, 0.0f };
+    if(!parseCommand(pck, &cmd)) return;
 
-    xQueueSend(toControlQueue, &command, 0);
+    xQueueSend(toControlQueue, &cmd, 0);
 }
 
 void sendToServer() {

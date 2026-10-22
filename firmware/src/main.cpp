@@ -16,6 +16,7 @@ void setup() {
 
     WiFi.softAP(SSID, PASSWORD);
     ArduinoOTA.begin();
+    otaActive = false;
 
     ArduinoOTA.onStart([] {
         otaActive = true;
