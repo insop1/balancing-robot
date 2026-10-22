@@ -9,14 +9,15 @@
 const char* SSID = "freedonuts";
 const char* PASSWORD = "omgdonuts";
 
-// Reminder: create a log system that replicates Serial log
+std::atomic<bool> otaActive(false);
+QueueHandle_t toControlQueue;
+QueueHandle_t toNetworkQueue;
 
 void setup() {
     Serial.begin(115200);
 
     WiFi.softAP(SSID, PASSWORD);
     ArduinoOTA.begin();
-    otaActive = false;
 
     ArduinoOTA.onStart([] {
         otaActive = true;
