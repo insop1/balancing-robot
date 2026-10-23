@@ -17,6 +17,7 @@ void setup() {
     Serial.begin(115200);
 
     WiFi.softAP(SSID, PASSWORD);
+
     ArduinoOTA.begin();
 
     ArduinoOTA.onStart([] {

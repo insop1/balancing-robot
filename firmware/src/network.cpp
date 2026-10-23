@@ -23,8 +23,8 @@ uint32_t robotSeq = 0;
 uint32_t serverLastBoot = 0;
 uint32_t serverLastSeq = 0;
 
-IPAddress serverIP;
-uint16_t serverPort = 0;
+constexpr char serverIP[] = "192.168.4.2";
+constexpr uint16_t serverPort = 3103;
 
 WiFiUDP udp;
 
@@ -37,6 +37,7 @@ bool parseCommand(const TPacket &pck, Command *cmd) {
         case CALIBRATE:
         case ARMED:
             cmd->a = atof(pck.text);
+            break;
         default:
             return false;
     }
@@ -49,9 +50,6 @@ void handlePacket() {
     udp.flush();
 
     if(n < 9) return;
-
-    serverIP = udp.remoteIP();
-    serverPort = udp.remotePort();
 
     // Byte offsets
     // 0: bootServerId uint32
@@ -116,9 +114,7 @@ void networkTask(void*) {
             handlePacket();
         }
         
-        if(serverPort) {
-            sendToServer();
-        }
+        sendToServer();
         vTaskDelay(pdMS_TO_TICKS(5));
     }
 }
