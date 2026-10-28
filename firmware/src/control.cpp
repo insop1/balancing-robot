@@ -26,7 +26,7 @@ void controlTask(void*) {
         Command cmd;
         while(xQueueReceive(toControlQueue, &cmd, 0)) {
             if(cmd.type == JOYSTICK) {
-                motors::turn(cmd.a);
+                motors::turn(cmd.a, cmd.b);
             }
         }
         vTaskDelayUntil(&lastTick, pdMS_TO_TICKS(5));
