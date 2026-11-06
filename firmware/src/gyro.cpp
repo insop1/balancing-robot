@@ -1,4 +1,5 @@
 #include "gyro.h"
+#include <cmath>
 
 namespace {
 
@@ -16,16 +17,30 @@ bool read() {
     return imu.Read();
 }
 Eigen::Vector3f getGyro() {
-    float gx = imu.gyro_x_radps();
-    float gy = imu.gyro_y_radps();
-    float gz = imu.gyro_z_radps();
+    float x = imu.gyro_x_radps();
+    float y = imu.gyro_y_radps();
+    float z = imu.gyro_z_radps();
+
+    float rads = M_PI / 180;
+
+    // Adjusting based on how the MPU6500 sits in the robot.
+    float wx = z * cos(67.7 * rads) + y * cos(22.3 * rads);
+    float wy = -x;
+    float wz = -(z * sin(67.7 * rads)) + y * sin(22.3 * rads);
     
-    return Eigen::Vector3f(gx, gy, gz);
+    return Eigen::Vector3f(wx, wy, wz);
 }
 Eigen::Vector3f getAccel() {
-    float ax = imu.accel_x_mps2();
-    float ay = imu.accel_y_mps2();
-    float az = imu.accel_z_mps2();
+    float x = imu.accel_x_mps2();
+    float y = imu.accel_y_mps2();
+    float z = imu.accel_z_mps2();
+
+    float rads = M_PI / 180;
+
+    // Adjusting based on how the MPU6500 sits in the robot.
+    float ax = z * cos(67.7 * rads) + y * cos(22.3 * rads);
+    float ay = -x;
+    float az = -(z * sin(67.7 * rads)) + y * sin(22.3 * rads);
 
     return Eigen::Vector3f(ax, ay, az);
 }

@@ -1,79 +1,88 @@
 #include "motors.h"
 #include <cmath>
 #include "esp32-hal-gpio.h"
-#include "log.h"
 #include <FastAccelStepperEngine.h>
 
 
 // WIP: Some ideas may be scratched
-
 namespace {
-
-template <typename T>
-constexpr int sgn(T val) {
-    return (T(0) < val) - (val < T(0));
-}
 
 FastAccelStepperEngine engine = FastAccelStepperEngine();
 
-// ms1&ms3, ms2
-Motor left{19, 21, nullptr};
-Motor right{18, 5, nullptr};
+// Indexed by motors::Side
+// LEFT = 0, RIGHT = 1
+Motor motorList[2] = {
+    // ms1 (tied to ms3), ms2
+    {21, 19, nullptr}, 
+    {5, 18, nullptr},
+};
 
 }
 
 namespace motors {
 
+Motor& get(Side side) {
+    return motorList[(int)side];
+}
+
 void init() {
     engine.init();
+
+    Motor &left = get(LEFT);
+    Motor &right = get(RIGHT);
 
     left.stepper = engine.stepperConnectToPin(23);
     left.stepper->setDirectionPin(22);
 
-    right.stepper = engine.stepperConnectToPin(15);
-    right.stepper->setDirectionPin(2);
-
     left.stepper->setSpeedInHz(400);
     left.stepper->setAcceleration(100000);
 
+    pinMode(left.ms2, OUTPUT);
+    pinMode(left.ms1, OUTPUT);
+
+    right.stepper = engine.stepperConnectToPin(2);
+    right.stepper->setDirectionPin(15);
+
     right.stepper->setSpeedInHz(400);
     right.stepper->setAcceleration(100000);
+    
+    pinMode(right.ms1, OUTPUT);
+    pinMode(right.ms2, OUTPUT);
+
 }
 
-// theta is in degrees - w is in rad / s
-void turn(float deg, float w) {
-    if(w > 0) {
-        digitalWrite(left.dir(), HIGH);
-    } else if (w < 0) {
-        digitalWrite(left.dir(), LOW);
-    } else {
+void turn(Side side, MSType type, float w) {
+    Motor &mot = get(side);
+    if(w == 0) {
+        mot.stepper->setSpeedInHz(0);
+        mot.stepper->stopMove();
         return;
     }
 
-    float aDeg = abs(deg);
-    float n1 = floor(aDeg / 1.8);
-    float n2 = floor(4*(aDeg / 1.8 - n1));
-    float n3 = floor(16*(aDeg / 1.8 - n1 - n2 / 4));
-    
-    float r = deg - 1.8 * sgn(deg) * (n1 - n2/4 - n3/16);
-    float new_theta = 1.8 * (n1 - n2/4 - n3/16); 
+    switch(type) {
+        case FULL:
+            digitalWrite(mot.ms1, LOW);
+            digitalWrite(mot.ms2, LOW);
+            break;
+        case QUARTER:
+            digitalWrite(mot.ms1, LOW);
+            digitalWrite(mot.ms2, HIGH);
+            break;
+        case SIXTEENTH:
+            digitalWrite(mot.ms1, HIGH);
+            digitalWrite(mot.ms2, HIGH);
+            break;
+    }
 
-    net::log("r: %f | new_theta: %f", r, new_theta);
+    float speed = (100 * abs(w)) / M_PI;
 
-    float speed = (100/M_PI) * abs(w);
-    left.stepper->setSpeedInHz(speed);
+    mot.stepper->setSpeedInHz(speed);
 
-    digitalWrite(left.ms1, LOW);
-    digitalWrite(left.ms2, LOW);
-    left.stepper->move(n1);
-
-    left.stepper->setSpeedInHz(speed * 4);
-    digitalWrite(left.ms2, HIGH);
-    left.stepper->move(n2);
-
-    left.stepper->setSpeedInHz(speed * 16);
-    digitalWrite(left.ms1, HIGH);
-    left.stepper->move(n3);
+    if(w > 0) {
+        mot.stepper->runForward();
+    } else {
+        mot.stepper->runBackward();
+    }
 }
 
 }
