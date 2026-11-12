@@ -30,7 +30,6 @@ enum Side {
 Motor motor(uint8_t dir, uint8_t step, uint8_t ms1, uint8_t ms2);
 void turn(Side side, MSType type, float w);
 void init();
-void turn(float degree);
 void step(int steps);
 
 }

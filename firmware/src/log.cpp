@@ -1,4 +1,3 @@
-
 #include "log.h"
 #include "shared.h"
 

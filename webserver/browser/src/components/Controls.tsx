@@ -3,6 +3,13 @@ import { send } from '../websocket.ts';
 import './Controls.css';
 import { CommandType } from '../../../shared/messages.ts';
 
+const commandMap: Record<string, CommandType | undefined> = {
+  armed: CommandType.Armed,
+  joystick: CommandType.Joystick,
+  calibrate: CommandType.Calibrate,
+  setgain: CommandType.SetGain,
+};
+
 export function Input() {
   const [text, setText] = React.useState('');
 
@@ -11,24 +18,11 @@ export function Input() {
       const lowerText = text.toLowerCase();
       const args: string[] = lowerText.split(' ');
       
-      // currently just a temporary test
-      let cType;
-      switch(args[0]) {
-        case "armed":
-          cType = CommandType.Armed;
-          break;
-        case "joystick":
-          cType = CommandType.Joystick;
-          break;
-        case "calibrate":
-          cType = CommandType.Calibrate;
-          break;
-        default:
-          return;
-      }
-
-      send({ type: cType, text: args[1] });
+      const cType = commandMap[args[0]];
       setText('');
+
+      if (cType === undefined) return;
+      send({ type: cType, text: args[1] });
     }
   }
 

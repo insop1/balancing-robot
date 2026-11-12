@@ -31,8 +31,9 @@ WiFiUDP udp;
 bool parseCommand(const TPacket &pck, Command *cmd) {
     // return true if parsed
     switch(cmd->type) {
+        case SET_GAIN:
         case JOYSTICK:
-            sscanf(pck.text, "%f,%f", &cmd->a, &cmd->b);
+            if(!sscanf(pck.text, "%f,%f", &cmd->a, &cmd->b)) return false;
             break;
         case CALIBRATE:
         case ARMED:

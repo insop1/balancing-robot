@@ -9,7 +9,9 @@ export const CommandType = {
   Armed: 0,
   Joystick: 1,
   Calibrate: 2,
-}
+  SetGain: 3,
+} as const;
+export type CommandType = typeof CommandType[keyof typeof CommandType];
 
 export type RobotData = {
   bootId: number, // uint32_t 0 - 3

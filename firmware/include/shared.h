@@ -15,6 +15,7 @@ enum CommandType : uint8_t {
     ARMED = 0,
     JOYSTICK = 1,
     CALIBRATE = 2,
+    SET_GAIN = 3,
 };
 struct Command {
     CommandType type;

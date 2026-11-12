@@ -1,8 +1,6 @@
 #include "motors.h"
 #include <cmath>
-#include "esp32-hal-gpio.h"
 #include <FastAccelStepperEngine.h>
-
 
 // WIP: Some ideas may be scratched
 namespace {
@@ -59,22 +57,26 @@ void turn(Side side, MSType type, float w) {
         return;
     }
 
+    int stepsMult;
     switch(type) {
         case FULL:
             digitalWrite(mot.ms1, LOW);
             digitalWrite(mot.ms2, LOW);
+            stepsMult = 1;
             break;
         case QUARTER:
             digitalWrite(mot.ms1, LOW);
             digitalWrite(mot.ms2, HIGH);
+            stepsMult = 4;
             break;
         case SIXTEENTH:
             digitalWrite(mot.ms1, HIGH);
             digitalWrite(mot.ms2, HIGH);
+            stepsMult = 16;
             break;
     }
 
-    float speed = (100 * abs(w)) / M_PI;
+    float speed = ((100 * std::abs(w)) / M_PI) * stepsMult;
 
     mot.stepper->setSpeedInHz(speed);
 
