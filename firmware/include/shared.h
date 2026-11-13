@@ -11,12 +11,12 @@ extern std::atomic<bool> otaActive;
 // Control task might send logs to network task to send to the server.
 
 // Network to Control
-enum CommandType : uint8_t {
-    ARMED = 0,
-    JOYSTICK = 1,
-    CALIBRATE = 2,
-    SET_GAIN = 3,
-    MODE = 4,
+enum class CommandType : uint8_t {
+    Armed = 0,
+    Joystick = 1,
+    Calibrate = 2,
+    SetGain = 3,
+    Mode = 4,
 };
 struct Command {
     CommandType type;
@@ -30,12 +30,13 @@ struct Command {
 extern QueueHandle_t toControlQueue;
 
 // Control to Network
-enum LogType : uint8_t {
-    LOG = 0,
-    ERROR = 1,
+enum class MsgType : uint8_t {
+    Log = 0,
+    Error = 1,
+    Status = 2,
 };
-struct Log {
-    LogType type;
+struct Msg {
+    MsgType type;
     char text[LOG_TEXT_SIZE];
 };
 extern QueueHandle_t toNetworkQueue;

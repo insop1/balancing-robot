@@ -2,6 +2,7 @@
 export const RobotMsgType = {
   Log: 0,
   Error: 1,
+  Status: 2,
 } as const;
 
 // From server to robot

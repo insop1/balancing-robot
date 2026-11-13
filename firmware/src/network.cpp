@@ -34,13 +34,13 @@ WiFiUDP udp;
 bool parseCommand(const TPacket &pck, Command *cmd) {
     // return true if parsed
     switch(cmd->type) {
-        case SET_GAIN:
-        case JOYSTICK:
+        case CommandType::SetGain:
+        case CommandType::Joystick:
             if(sscanf(pck.text, "%f,%f", &cmd->a, &cmd->b) != 2) return false;
             break;
-        case MODE:
-        case CALIBRATE:
-        case ARMED:
+        case CommandType::Mode:
+        case CommandType::Calibrate:
+        case CommandType::Armed:
             cmd->a = atof(pck.text);
             break;
         default:
@@ -86,16 +86,16 @@ void handlePacket() {
 }
 
 void sendToServer() {
-    Log log;
-    while(xQueueReceive(toNetworkQueue, &log, 0)) {
+    Msg msg;
+    while(xQueueReceive(toNetworkQueue, &msg, 0)) {
         uint8_t out[9 + LOG_TEXT_SIZE];
-        uint8_t textLen = strlen(log.text);
+        uint8_t textLen = strlen(msg.text);
 
         // Look at byte offsets in handlePacket. same format
         memcpy(out, &robotBootID, 4);
         memcpy(out + 4, &robotSeq, 4);
-        out[8] = log.type;
-        memcpy(out + 9, log.text, textLen);
+        out[8] = static_cast<uint8_t>(msg.type);
+        memcpy(out + 9, msg.text, textLen);
 
         robotSeq++;
 

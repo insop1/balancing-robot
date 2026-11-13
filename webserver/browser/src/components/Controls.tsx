@@ -4,8 +4,8 @@ import { Joystick } from './Joystick';
 export function Controls() {
   return(
     <div>
-      <Input/>
-      <Joystick/>
+      <Input />
+      <Joystick />
     </div>
   )
 }

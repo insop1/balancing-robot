@@ -151,7 +151,7 @@ void controlTask(void*) {
         Command cmd;
         while(xQueueReceive(toControlQueue, &cmd, 0)) {
             switch(cmd.type) {
-                case ARMED:
+                case CommandType::Armed:
                     armed = cmd.a;
                     if(armed) {
                         net::log("Robot armed");
@@ -159,7 +159,7 @@ void controlTask(void*) {
                         net::log("Robot disarmed");
                     }
                     break;
-                case SET_GAIN: {
+                case CommandType::SetGain: {
                     int i = int(cmd.a);
                     if(i < sizeof(tuneArray) / sizeof(float)) {
                         *tuneArray[i] = cmd.b;
@@ -167,11 +167,11 @@ void controlTask(void*) {
                     }
                     break;
                 }
-                case JOYSTICK: {
+                case CommandType::Joystick: {
                     joystick = Vector2f(cmd.a, cmd.b);
                     break;
                 }
-                case MODE: {
+                case CommandType::Mode: {
                     useAccelControl = cmd.a;
                     if(useAccelControl) {
                         net::log("Using acceleration");
