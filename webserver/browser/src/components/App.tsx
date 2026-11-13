@@ -1,5 +1,4 @@
-import React from 'react';
-import { Input } from './Controls.tsx';
+import { Controls } from './Controls.tsx';
 import { SerialMonitor } from './SerialMonitor.tsx';
 import './App.css';
 
@@ -7,7 +6,7 @@ export function App() {
   return(
     <main className='layout'>
       <section className='controls'>
-        <Input />
+        <Controls />
       </section>
       <section className='monitor'>
         <SerialMonitor />

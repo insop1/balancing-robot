@@ -6,8 +6,6 @@
 #include "network.h"
 #include "control.h"
 
-const char* SSID = "freedonuts";
-const char* PASSWORD = "omgdonuts";
 
 std::atomic<bool> otaActive(false);
 QueueHandle_t toControlQueue;
@@ -15,19 +13,6 @@ QueueHandle_t toNetworkQueue;
 
 void setup() {
     Serial.begin(115200);
-
-    WiFi.softAP(SSID, PASSWORD);
-
-    ArduinoOTA.begin();
-
-    ArduinoOTA.onStart([] {
-        otaActive = true;
-        vTaskDelay(pdMS_TO_TICKS(20));
-    });
-
-    ArduinoOTA.onError([] (ota_error_t) {
-        otaActive = false;
-    });
 
     toControlQueue = xQueueCreate(16, sizeof(Command));
     toNetworkQueue = xQueueCreate(32, sizeof(Log));

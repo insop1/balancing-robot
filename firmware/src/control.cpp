@@ -9,22 +9,21 @@
 namespace {
 
 using Eigen::Vector3f;
-using motors::MSType;
+using Eigen::Vector2f;
 
 uint32_t logPrev = 0;
 constexpr uint32_t logInterval = 200;
 
-Vector3f prevGyro = Vector3f::Zero();
-Vector3f prevAccel = Vector3f::Zero();
+uint32_t motorPrev = 0;
+constexpr uint32_t motorInterval = 100;
 
 unsigned int prevMs = 0;
 
 // dt should only have 3 decimal digits
-constexpr float dt = 0.005;
+constexpr float dt = 0.005f;
 const uint32_t msDelay = uint32_t(dt * 1000);
 
-bool armed = true;
-
+bool armed = false;
 
 int sign(float n) {
     if(n >= 0) {
@@ -34,36 +33,64 @@ int sign(float n) {
     }
 }
 
+Vector3f prev2Gyro = Vector3f::Zero();
+Vector3f prevGyro = Vector3f::Zero();
+Vector3f prevAccel = Vector3f::Zero();
+
 // Currently testing this one
-const float thresholdTheta = M_PI/1600;
+float placementOffset = 2 * (M_PI/180);
+constexpr float thresholdAngle = 1.8 * (M_PI/180);
+
 float tiltIntegral = 0;
+float tiltIntInt = 0;
 bool integralStarted = false;
 
-float k1 = 1.0f;
-float k2 = 1.0f;
-float k3 = 1.0f;
-float k4 = 1.0f;
+float k1 = 15.0f;
+float k2 = 15.0f;
+float k3 = 8.0f;
+float k4 = 0.01f;
+float k5 = 110.0f;
 
-float calcVel(const Vector3f &accel, const Vector3f &gyro) {
+float calcBalVel(const Vector3f &accel, const Vector3f &gyro, float ms) {
     float thetaA = atan(accel.z() / accel.y());
 
-    float dw_x = (gyro.x() - prevGyro.x());
+    float dGyroX = (gyro.x() - prevGyro.x());
+    float dPrevGyroX = (prevGyro.x() - prev2Gyro.x());
     float tiltRate = gyro.x();
 
-    float alpha = dw_x / dt;
+    float alpha = dGyroX / dt;
+    float prevAlpha = dPrevGyroX / dt;
+    float avgAlpha = (alpha + prevAlpha) / 2;
 
-    if(std::abs(thetaA) < thresholdTheta) {
+    if(std::abs(thetaA - placementOffset) < thresholdAngle) {
         integralStarted = true;
         tiltIntegral = 0;
+        tiltIntInt = 0;
     } else {
         if(integralStarted) {
-            tiltIntegral += sign(thetaA) * thresholdTheta;
+            tiltIntegral += sign(thetaA) * thresholdAngle;
             integralStarted = false;
         }
         tiltIntegral += tiltRate * dt;
+        tiltIntInt += (tiltIntegral - placementOffset) * dt;
     }
 
-    return -(k1 * tiltIntegral + k2 * thetaA + k3 * tiltRate + k4 * alpha);
+    float result = (k1 * (tiltIntegral - placementOffset) + k2 * (thetaA - placementOffset) + k3 * tiltRate + k4 * avgAlpha + k5 * tiltIntInt);
+
+    float compAngle = 0.2 * thetaA + 0.8 * tiltIntegral;
+    if(std::abs(compAngle) < thresholdAngle) {
+        result = 0;
+    }
+
+    if(ms - logPrev > logInterval) {
+        net::log("\n"
+                 "tiltInt: %f tiltIntInt: %f\n"
+                 "thetaA: %f tiltRate: %f alpha: %f result: %f\n"
+                 , tiltIntegral - placementOffset, tiltIntInt, thetaA - placementOffset, tiltRate, avgAlpha, result);
+        logPrev = ms;
+    }
+
+    return result;
 }
 
 // backup incase no time
@@ -73,7 +100,7 @@ constexpr float filterK = 0.98f;
 float kp = 150.0f;
 float kd = 15.0f;
 
-float calcAccel(const Vector3f &accel, const Vector3f &gyro) {
+float calcBalAccel(const Vector3f &accel, const Vector3f &gyro) {
     float thetaA = atan(accel.z() / accel.y());
     float tiltRate = gyro.x();
 
@@ -84,10 +111,26 @@ float calcAccel(const Vector3f &accel, const Vector3f &gyro) {
 
     // complimentary filter
     theta = filterK * (theta + tiltRate * dt) + (1 - filterK) * thetaA;
-    return -(kp * theta + kd * tiltRate);
+    return (kp * theta + kd * tiltRate);
 }
 
-constexpr float *tuneArray[] = {&k1, &k2, &k3, &k4, &kp, &kd};
+constexpr float *tuneArray[] = {&k1, &k2, &k3, &k4, &k5, &kp, &kd};
+
+// values are -1 to 1 for x and y
+Vector2f joystick = Vector2f::Zero();
+
+float clamp(float v, float min, float max) {
+    float result = v;
+    if(v > max) {
+        result = max;
+    }
+    else if(v < min) {
+        result = min;
+    }
+    return result;
+}
+
+bool useAccelControl = false;
 
 } // namespace
 
@@ -95,11 +138,14 @@ void controlTask(void*) {
     TickType_t lastTick = xTaskGetTickCount();
 
     if(!gyro::init()) {
-        net::log("Could not initialize imu");
-        while(true) delay(100000);
+        while(true) {
+            net::log("Could not initialize imu");
+            delay(1000);
+        }
     }
 
     motors::init();
+    net::log("Control system initiatized");
 
     while(true) {
         Command cmd;
@@ -107,14 +153,31 @@ void controlTask(void*) {
             switch(cmd.type) {
                 case ARMED:
                     armed = cmd.a;
+                    if(armed) {
+                        net::log("Robot armed");
+                    } else {
+                        net::log("Robot disarmed");
+                    }
                     break;
                 case SET_GAIN: {
                     int i = int(cmd.a);
-                    if(i > sizeof(tuneArray) / sizeof(float)) {
+                    if(i < sizeof(tuneArray) / sizeof(float)) {
                         *tuneArray[i] = cmd.b;
-                        net::log("k[%d] = %f", i, cmd.b);
+                        net::log("k[%d] = %f", i + 1, cmd.b);
                     }
                     break;
+                }
+                case JOYSTICK: {
+                    joystick = Vector2f(cmd.a, cmd.b);
+                    break;
+                }
+                case MODE: {
+                    useAccelControl = cmd.a;
+                    if(useAccelControl) {
+                        net::log("Using acceleration");
+                    } else {
+                        net::log("Using velocity");
+                    }
                 }
                 default:
                     break;
@@ -128,15 +191,22 @@ void controlTask(void*) {
         Vector3f accel = gyro::getAccel();
 
         if(!armed || otaActive) {
-            motors::turn(motors::LEFT, MSType::FULL, 0);
-            motors::turn(motors::RIGHT, MSType::FULL, 0);
+            motors::forceStop(motors::LEFT);
+            motors::forceStop(motors::RIGHT);
         } else {
-            float vel = calcVel(accel, gyro);
-            motors::turn(motors::LEFT, MSType::FULL, vel);
-            motors::turn(motors::RIGHT, MSType::FULL, vel);
+            if(useAccelControl) {
+                float acc = -calcBalAccel(accel, gyro);
+                motors::moveByAcceleration(motors::LEFT, acc);
+                motors::moveByAcceleration(motors::RIGHT, acc);
+            } else {
+                float acc = -calcBalVel(accel, gyro, ms);
+                motors::moveByVelocity(motors::LEFT, acc);
+                motors::moveByVelocity(motors::RIGHT, acc);
+            }
         }
 
         prevGyro = gyro;
+        prev2Gyro = prevGyro;
         prevAccel = accel;
         vTaskDelayUntil(&lastTick, pdMS_TO_TICKS(msDelay));
     }

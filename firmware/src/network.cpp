@@ -9,6 +9,9 @@ constexpr uint16_t UDP_PORT = 3103;
 
 namespace {
 
+const char* SSID = "freedonuts";
+const char* PASSWORD = "omgdonuts";
+
 constexpr uint8_t UDP_BUF_SIZE = 64;
 struct __attribute__((packed)) TPacket {
     uint32_t serverBootId;
@@ -33,8 +36,9 @@ bool parseCommand(const TPacket &pck, Command *cmd) {
     switch(cmd->type) {
         case SET_GAIN:
         case JOYSTICK:
-            if(!sscanf(pck.text, "%f,%f", &cmd->a, &cmd->b)) return false;
+            if(sscanf(pck.text, "%f,%f", &cmd->a, &cmd->b) != 2) return false;
             break;
+        case MODE:
         case CALIBRATE:
         case ARMED:
             cmd->a = atof(pck.text);
@@ -104,6 +108,19 @@ void sendToServer() {
 } // namespace
 
 void networkTask(void*) {
+    WiFi.softAP(SSID, PASSWORD);
+
+    ArduinoOTA.begin();
+
+    ArduinoOTA.onStart([] {
+        otaActive = true;
+        vTaskDelay(pdMS_TO_TICKS(20));
+    });
+
+    ArduinoOTA.onError([] (ota_error_t) {
+        otaActive = false;
+    });
+
     robotBootID = esp_random();
     udp.begin(UDP_PORT);
 

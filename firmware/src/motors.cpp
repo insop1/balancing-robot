@@ -32,24 +32,35 @@ void init() {
     left.stepper = engine.stepperConnectToPin(23);
     left.stepper->setDirectionPin(22);
 
-    left.stepper->setSpeedInHz(400);
-    left.stepper->setAcceleration(100000);
-
-    pinMode(left.ms2, OUTPUT);
-    pinMode(left.ms1, OUTPUT);
-
     right.stepper = engine.stepperConnectToPin(2);
     right.stepper->setDirectionPin(15);
 
-    right.stepper->setSpeedInHz(400);
-    right.stepper->setAcceleration(100000);
-    
-    pinMode(right.ms1, OUTPUT);
-    pinMode(right.ms2, OUTPUT);
+    for(Motor &mot : motorList) {
+        mot.stepper->setSpeedInHz(400);
+        mot.stepper->setAcceleration(400);
 
+        pinMode(mot.ms2, OUTPUT);
+        pinMode(mot.ms1, OUTPUT);
+
+        digitalWrite(mot.ms1, LOW);
+        digitalWrite(mot.ms2, LOW);
+    }
 }
 
-void turn(Side side, MSType type, float w) {
+// takes rad/s^2
+void moveByAcceleration(Side side, float accel) {
+    Motor &mot = get(side);
+    float stepsAccel = ((100 * accel) / M_PI);
+    mot.stepper->moveByAcceleration(stepsAccel);
+}
+
+void forceStop(Side side) {
+    Motor &mot = get(side);
+    mot.stepper->forceStop();
+}
+
+// takes rad/s
+void moveByVelocity(Side side, float w) {
     Motor &mot = get(side);
     if(w == 0) {
         mot.stepper->setSpeedInHz(0);
@@ -57,27 +68,7 @@ void turn(Side side, MSType type, float w) {
         return;
     }
 
-    int stepsMult;
-    switch(type) {
-        case FULL:
-            digitalWrite(mot.ms1, LOW);
-            digitalWrite(mot.ms2, LOW);
-            stepsMult = 1;
-            break;
-        case QUARTER:
-            digitalWrite(mot.ms1, LOW);
-            digitalWrite(mot.ms2, HIGH);
-            stepsMult = 4;
-            break;
-        case SIXTEENTH:
-            digitalWrite(mot.ms1, HIGH);
-            digitalWrite(mot.ms2, HIGH);
-            stepsMult = 16;
-            break;
-    }
-
-    float speed = ((100 * std::abs(w)) / M_PI) * stepsMult;
-
+    float speed = ((100 * std::abs(w)) / M_PI);
     mot.stepper->setSpeedInHz(speed);
 
     if(w > 0) {
