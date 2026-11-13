@@ -14,9 +14,6 @@ using Eigen::Vector2f;
 uint32_t logPrev = 0;
 constexpr uint32_t logInterval = 200;
 
-uint32_t motorPrev = 0;
-constexpr uint32_t motorInterval = 100;
-
 unsigned int prevMs = 0;
 
 // dt should only have 3 decimal digits
@@ -130,8 +127,6 @@ float clamp(float v, float min, float max) {
     return result;
 }
 
-bool useAccelControl = false;
-
 } // namespace
 
 void controlTask(void*) {
@@ -171,14 +166,6 @@ void controlTask(void*) {
                     joystick = Vector2f(cmd.a, cmd.b);
                     break;
                 }
-                case CommandType::Mode: {
-                    useAccelControl = cmd.a;
-                    if(useAccelControl) {
-                        net::log("Using acceleration");
-                    } else {
-                        net::log("Using velocity");
-                    }
-                }
                 default:
                     break;
             }
@@ -194,15 +181,9 @@ void controlTask(void*) {
             motors::forceStop(motors::LEFT);
             motors::forceStop(motors::RIGHT);
         } else {
-            if(useAccelControl) {
-                float acc = -calcBalAccel(accel, gyro);
-                motors::moveByAcceleration(motors::LEFT, acc);
-                motors::moveByAcceleration(motors::RIGHT, acc);
-            } else {
-                float acc = -calcBalVel(accel, gyro, ms);
-                motors::moveByVelocity(motors::LEFT, acc);
-                motors::moveByVelocity(motors::RIGHT, acc);
-            }
+            float acc = -calcBalVel(accel, gyro, ms);
+            motors::moveByVelocity(motors::LEFT, acc);
+            motors::moveByVelocity(motors::RIGHT, acc);
         }
 
         prevGyro = gyro;

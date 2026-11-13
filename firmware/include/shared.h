@@ -16,7 +16,6 @@ enum class CommandType : uint8_t {
     Joystick = 1,
     Calibrate = 2,
     SetGain = 3,
-    Mode = 4,
 };
 struct Command {
     CommandType type;

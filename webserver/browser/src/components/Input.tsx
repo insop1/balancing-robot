@@ -8,7 +8,6 @@ const commandMap: Record<string, CommandType | undefined> = {
   joystick: CommandType.Joystick,
   calibrate: CommandType.Calibrate,
   setgain: CommandType.SetGain,
-  mode: CommandType.Mode,
 };
 
 export function Input() {

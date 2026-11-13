@@ -38,7 +38,6 @@ bool parseCommand(const TPacket &pck, Command *cmd) {
         case CommandType::Joystick:
             if(sscanf(pck.text, "%f,%f", &cmd->a, &cmd->b) != 2) return false;
             break;
-        case CommandType::Mode:
         case CommandType::Calibrate:
         case CommandType::Armed:
             cmd->a = atof(pck.text);

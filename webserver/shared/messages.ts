@@ -11,7 +11,6 @@ export const CommandType = {
   Joystick: 1,
   Calibrate: 2,
   SetGain: 3,
-  Mode: 4,
 } as const;
 export type CommandType = typeof CommandType[keyof typeof CommandType];
 
