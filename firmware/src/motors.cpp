@@ -7,6 +7,9 @@ namespace {
 
 FastAccelStepperEngine engine = FastAccelStepperEngine();
 
+constexpr uint32_t MAX_SPEED = 400;
+constexpr uint32_t MAX_ACCEL = 3000;
+
 // Indexed by motors::Side
 // LEFT = 0, RIGHT = 1
 Motor motorList[2] = {
@@ -36,8 +39,8 @@ void init() {
     right.stepper->setDirectionPin(15);
 
     for(Motor &mot : motorList) {
-        mot.stepper->setSpeedInHz(400);
-        mot.stepper->setAcceleration(400);
+        mot.stepper->setSpeedInHz(MAX_SPEED);
+        mot.stepper->setAcceleration(MAX_ACCEL);
 
         pinMode(mot.ms2, OUTPUT);
         pinMode(mot.ms1, OUTPUT);
@@ -50,7 +53,8 @@ void init() {
 // takes rad/s^2
 void moveByAcceleration(Side side, float accel) {
     Motor &mot = get(side);
-    float stepsAccel = ((100 * accel) / M_PI);
+    float stepsAccel = ((100.0f * accel) / M_PI);
+    mot.stepper->setSpeedInHz(MAX_SPEED);
     mot.stepper->moveByAcceleration(stepsAccel);
 }
 
@@ -60,18 +64,19 @@ void forceStop(Side side) {
 }
 
 // takes rad/s
-void moveByVelocity(Side side, float w) {
+void moveByVelocity(Side side, float vel) {
     Motor &mot = get(side);
-    if(w == 0) {
-        mot.stepper->setSpeedInHz(0);
+
+    // You can't set speed to 0
+    // Using MilliHz because float truncates when cast to uint32_t
+    uint32_t speedMilliHz = ((100.0f * std::abs(vel)) / M_PI) * 1000.0f;
+    if(speedMilliHz == 0) {
         mot.stepper->stopMove();
         return;
     }
+    mot.stepper->setSpeedInMilliHz(speedMilliHz);
 
-    float speed = ((100 * std::abs(w)) / M_PI);
-    mot.stepper->setSpeedInHz(speed);
-
-    if(w > 0) {
+    if(vel > 0) {
         mot.stepper->runForward();
     } else {
         mot.stepper->runBackward();
