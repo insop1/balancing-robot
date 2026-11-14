@@ -34,7 +34,7 @@ export function Joystick() {
 
     const timer = setInterval(() => {
       const { x, y } = stick.current;
-      send({ type: CommandType.Joystick, text: `${x.toFixed(3)},${y.toFixed}`})
+      send({ type: CommandType.Joystick, text: `${x.toFixed(3)},${y.toFixed(3)}` });
     }, 33);
 
     return () => {

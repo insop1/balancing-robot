@@ -7,8 +7,8 @@ namespace {
 
 FastAccelStepperEngine engine = FastAccelStepperEngine();
 
-constexpr uint32_t MAX_SPEED = 400;
-constexpr uint32_t MAX_ACCEL = 3000;
+constexpr uint32_t MAX_SPEED = 2000;
+constexpr uint32_t MAX_ACCEL = 1500;
 
 // Indexed by motors::Side
 // LEFT = 0, RIGHT = 1
@@ -42,11 +42,11 @@ void init() {
         mot.stepper->setSpeedInHz(MAX_SPEED);
         mot.stepper->setAcceleration(MAX_ACCEL);
 
-        pinMode(mot.ms2, OUTPUT);
-        pinMode(mot.ms1, OUTPUT);
-
-        digitalWrite(mot.ms1, LOW);
-        digitalWrite(mot.ms2, LOW);
+        // pinMode(mot.ms2, OUTPUT);
+        // pinMode(mot.ms1, OUTPUT);
+        //
+        // digitalWrite(mot.ms1, LOW);
+        // digitalWrite(mot.ms2, LOW);
     }
 }
 
@@ -58,9 +58,9 @@ void moveByAcceleration(Side side, float accel) {
     mot.stepper->moveByAcceleration(stepsAccel);
 }
 
-void forceStop(Side side) {
+void stopMove(Side side) {
     Motor &mot = get(side);
-    mot.stepper->forceStop();
+    mot.stepper->stopMove();
 }
 
 // takes rad/s

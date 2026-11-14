@@ -3,7 +3,7 @@ import dgram from 'node:dgram';
 import { WebSocketServer } from 'ws';
 import { createServer } from 'node:http';
 import { join } from 'node:path'
-import { RobotMsgType, type RobotData, type ServerMsg } from '../../shared/messages.ts'
+import { CommandType, RobotMsgType, type RobotData, type ServerMsg } from '../../shared/messages.ts'
 
 const ROBOT_PORT = 3103;
 const ROBOT_IP = '192.168.4.1'
@@ -102,8 +102,15 @@ wss.on('connection', (ws) => {
 
     // Robot is hardcoded to only accept buffer of 64 bytes. 9 of bytes are headers.
     // So maximum character is 54 + null terminator, which is handled by the esp32
-    if(Buffer.byteLength(json.text) > 54) return;
+    if(Buffer.byteLength(json.text) > 54) {
+      sendToBrowser({
+        type: RobotMsgType.Error,
+        text: "Excess character sent to Robot, did not send",
+      })
+      return;
+    }
 
+    if(json.type != CommandType.Joystick) console.log(json);
     const serverMsg: ServerMsg = {
       type: json.type,
       text: json.text,

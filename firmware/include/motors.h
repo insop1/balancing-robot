@@ -28,9 +28,8 @@ enum Side {
 };
 
 void moveByAcceleration(Side side, float accel);
-void forceStop(Side side);
-Motor motor(uint8_t dir, uint8_t step, uint8_t ms1, uint8_t ms2);
-void moveByVelocity(Side side, float w);
+void stopMove(Side side);
+void moveByVelocity(Side side, float vel);
 void init();
 void step(int steps);
 
