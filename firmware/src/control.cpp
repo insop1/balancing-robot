@@ -37,10 +37,10 @@ float tiltIntInt = 0;
 bool integralStarted = false;
 
 float k1 = 0.0f;
-float k2 = 120.0f;
+float k2 = 80.0f;
 float k3 = 40.0f;
 float k4 = 0.0f;
-float k5 = 80.0f;
+float k5 = 120.0f;
 
 float calcBalVel(const Vector3f &accel, const Vector3f &gyro, float ms) {
     float thetaA = atan(accel.z() / accel.y());
@@ -59,11 +59,11 @@ float calcBalVel(const Vector3f &accel, const Vector3f &gyro, float ms) {
         tiltIntInt = 0;
     } else {
         if(integralStarted) {
-            tiltIntegral += util::sign(thetaA) * thresholdAngle;
+            tiltIntegral += util::sign(thetaA - placementOffset) * thresholdAngle;
             integralStarted = false;
         }
         tiltIntegral += tiltRate * dt;
-        tiltIntInt += (tiltIntegral - placementOffset) * dt;
+        tiltIntInt += tiltIntegral * dt;
     }
 
     float result = (k1 * (tiltIntegral - placementOffset) + k2 * (thetaA - placementOffset) + k3 * tiltRate + k4 * avgAlpha + k5 * tiltIntInt);
@@ -118,6 +118,9 @@ void handleNetworkQueue() {
         switch(cmd.type) {
             case CommandType::Armed: {
                 armed = cmd.a;
+                tiltIntegral = 0;
+                tiltIntInt = 0;
+                integralStarted = false;
                 if(armed) {
                     net::log("Robot armed");
                 } else {
@@ -171,7 +174,7 @@ void controlTask(void*) {
             motors::stopMove(motors::RIGHT);
         } else {
             float vel = -calcBalVel(accel, gyro, ms);
-            vel = util::clamp(vel, -120, 120);
+            vel = util::clamp(vel, -40, 40);
             motors::moveByVelocity(motors::LEFT, vel);
             motors::moveByVelocity(motors::RIGHT, vel);
         }
@@ -187,8 +190,8 @@ void controlTask(void*) {
             statusPrev = ms;
         }
 
-        prevGyro = gyro;
         prev2Gyro = prevGyro;
+        prevGyro = gyro;
         prevAccel = accel;
         vTaskDelayUntil(&lastTick, pdMS_TO_TICKS(msDelay));
     }
