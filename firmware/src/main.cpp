@@ -6,7 +6,6 @@
 #include "network.h"
 #include "control.h"
 
-
 std::atomic<bool> otaActive(false);
 QueueHandle_t toControlQueue;
 QueueHandle_t toNetworkQueue;

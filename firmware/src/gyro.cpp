@@ -4,13 +4,13 @@
 namespace {
 
 bfs::Mpu6500 imu(&SPI, gyro::NCS);
-constexpr float rads = M_PI / 180;
+constexpr float RADS = M_PI / 180;
 
 Eigen::Vector3f adjustData(const Eigen::Vector3f &vec) {
     // Adjusting based on how the esp32 sits in the robot.
-    float x = vec.z() * cos(67.7 * rads) + vec.y() * cos(22.3 * rads);
+    float x = vec.z() * cos(67.7 * RADS) + vec.y() * cos(22.3 * RADS);
     float y = -vec.x();
-    float z = -(vec.z() * sin(67.7 * rads)) + vec.y() * sin(22.3 * rads);
+    float z = -(vec.z() * sin(67.7 * RADS)) + vec.y() * sin(22.3 * RADS);
 
     return Eigen::Vector3f(x, y, z);
 }

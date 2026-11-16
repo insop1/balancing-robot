@@ -1,10 +1,11 @@
-#include "Arduino.h"
 #include "control.h"
 #include "shared.h"
 #include "log.h"
 #include "gyro.h"
 #include "motors.h"
 #include "util.h"
+
+#include <Arduino.h>
 #include <cmath>
 
 namespace {
@@ -13,24 +14,23 @@ using Eigen::Vector3f;
 using Eigen::Vector2f;
 
 uint32_t logPrev = 0;
-constexpr uint32_t logInterval = 200;
+constexpr uint32_t LOG_INTERVAL_MS = 200;
 
 uint32_t statusPrev = 0;
-constexpr uint32_t statusInterval = 500;
-
-// dt should only have 3 decimal digits
-constexpr float dt = 0.005f;
-const uint32_t msDelay = uint32_t(dt * 1000);
+constexpr uint32_t STATUS_INTERVAL_MS = 500;
 
 bool armed = false;
+
+constexpr uint32_t LOOP_MS = 5;
+constexpr float dt = LOOP_MS / 1000.0f;
 
 Vector3f prev2Gyro = Vector3f::Zero();
 Vector3f prevGyro = Vector3f::Zero();
 Vector3f prevAccel = Vector3f::Zero();
 
 // Currently testing this one
-float placementOffset = 2 * (M_PI/180);
-constexpr float thresholdAngle = 1.8 * (M_PI/180);
+constexpr float IMU_TILT_OFFSET = 2 * (M_PI/180);
+constexpr float THRESHOLD_ANGLE = 1.8 * (M_PI/180);
 
 float tiltIntegral = 0;
 float tiltIntInt = 0;
@@ -53,32 +53,32 @@ float calcBalVel(const Vector3f &accel, const Vector3f &gyro, float ms) {
     float prevAlpha = dPrevGyroX / dt;
     float avgAlpha = (alpha + prevAlpha) / 2;
 
-    if(std::abs(thetaA - placementOffset) < thresholdAngle) {
+    if(std::abs(thetaA - IMU_TILT_OFFSET) < THRESHOLD_ANGLE) {
         integralStarted = true;
         tiltIntegral = 0;
         tiltIntInt = 0;
     } else {
         if(integralStarted) {
-            tiltIntegral += util::sign(thetaA - placementOffset) * thresholdAngle;
+            tiltIntegral += util::sign(thetaA - IMU_TILT_OFFSET) * THRESHOLD_ANGLE;
             integralStarted = false;
         }
         tiltIntegral += tiltRate * dt;
         tiltIntInt += tiltIntegral * dt;
     }
 
-    float result = (k1 * (tiltIntegral - placementOffset) + k2 * (thetaA - placementOffset) + k3 * tiltRate + k4 * avgAlpha + k5 * tiltIntInt);
+    float result = (k1 * (tiltIntegral - IMU_TILT_OFFSET) + k2 * (thetaA - IMU_TILT_OFFSET) + k3 * tiltRate + k4 * avgAlpha + k5 * tiltIntInt);
 
     // float compAngle = 0.2 * thetaA + 0.8 * tiltIntegral;
-    // if(std::abs(compAngle) < thresholdAngle) {
+    // if(std::abs(compAngle) < THRESHOLD_ANGLE) {
     //     result = 0;
     // }
 
-    if(ms - logPrev > logInterval) {
+    if(ms - logPrev > LOG_INTERVAL_MS) {
         net::log(
             "\n"
             "tiltInt: %f tiltIntInt: %f\n"
             "thetaA: %f tiltRate: %f alpha: %f result: %f\n", 
-            tiltIntegral - placementOffset, tiltIntInt, thetaA - placementOffset, tiltRate, avgAlpha, result
+            tiltIntegral - IMU_TILT_OFFSET, tiltIntInt, thetaA - IMU_TILT_OFFSET, tiltRate, avgAlpha, result
         );
         logPrev = ms;
     }
@@ -179,7 +179,7 @@ void controlTask(void*) {
             motors::moveByVelocity(motors::RIGHT, vel);
         }
 
-        if(ms - statusPrev > statusInterval) {
+        if(ms - statusPrev > STATUS_INTERVAL_MS) {
             net::status(
                 "{"
                 "\"armed\":%d,"
@@ -193,6 +193,6 @@ void controlTask(void*) {
         prev2Gyro = prevGyro;
         prevGyro = gyro;
         prevAccel = accel;
-        vTaskDelayUntil(&lastTick, pdMS_TO_TICKS(msDelay));
+        vTaskDelayUntil(&lastTick, pdMS_TO_TICKS(LOOP_MS));
     }
 }

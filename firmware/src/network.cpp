@@ -26,8 +26,8 @@ uint32_t robotSeq = 0;
 uint32_t serverLastBoot = 0;
 uint32_t serverLastSeq = 0;
 
-constexpr char serverIP[] = "192.168.4.2";
-constexpr uint16_t serverPort = 3103;
+constexpr char SERVER_IP[] = "192.168.4.2";
+constexpr uint16_t SERVER_PORT = 3103;
 
 WiFiUDP udp;
 
@@ -98,7 +98,7 @@ void sendToServer() {
 
         robotSeq++;
 
-        udp.beginPacket(serverIP, serverPort);
+        udp.beginPacket(SERVER_IP, SERVER_PORT);
         udp.write(out, 9 + textLen);
         udp.endPacket();
     }
