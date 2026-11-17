@@ -27,6 +27,7 @@ enum Side {
     RIGHT,
 };
 
+Motor& get(Side side);
 void moveByAcceleration(Side side, float accel);
 void stopMove(Side side);
 void moveByVelocity(Side side, float vel);

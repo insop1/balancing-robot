@@ -84,23 +84,27 @@ void handlePacket() {
     xQueueSend(toControlQueue, &cmd, 0);
 }
 
-void sendToServer() {
+void sendToServer(const Msg &msg) {
+    uint8_t out[9 + LOG_TEXT_SIZE];
+    uint8_t textLen = strlen(msg.text);
+
+    // Look at byte offsets in handlePacket. same format
+    memcpy(out, &robotBootID, 4);
+    memcpy(out + 4, &robotSeq, 4);
+    out[8] = static_cast<uint8_t>(msg.type);
+    memcpy(out + 9, msg.text, textLen);
+
+    robotSeq++;
+
+    udp.beginPacket(SERVER_IP, SERVER_PORT);
+    udp.write(out, 9 + textLen);
+    udp.endPacket();
+}
+
+void handleQueue() {
     Msg msg;
     while(xQueueReceive(toNetworkQueue, &msg, 0)) {
-        uint8_t out[9 + LOG_TEXT_SIZE];
-        uint8_t textLen = strlen(msg.text);
-
-        // Look at byte offsets in handlePacket. same format
-        memcpy(out, &robotBootID, 4);
-        memcpy(out + 4, &robotSeq, 4);
-        out[8] = static_cast<uint8_t>(msg.type);
-        memcpy(out + 9, msg.text, textLen);
-
-        robotSeq++;
-
-        udp.beginPacket(SERVER_IP, SERVER_PORT);
-        udp.write(out, 9 + textLen);
-        udp.endPacket();
+        sendToServer(msg);
     }
 }
 
@@ -113,11 +117,13 @@ void networkTask(void*) {
 
     ArduinoOTA.onStart([] {
         otaActive = true;
+        sendToServer({MsgType::Log, "OTA active"});
         vTaskDelay(pdMS_TO_TICKS(20));
     });
 
     ArduinoOTA.onError([] (ota_error_t) {
         otaActive = false;
+        sendToServer({MsgType::Error, "OTA failed"});
     });
 
     robotBootID = esp_random();
@@ -131,7 +137,7 @@ void networkTask(void*) {
             handlePacket();
         }
         
-        sendToServer();
+        handleQueue();
         vTaskDelay(pdMS_TO_TICKS(5));
     }
 }

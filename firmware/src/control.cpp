@@ -13,6 +13,10 @@ namespace {
 using Eigen::Vector3f;
 using Eigen::Vector2f;
 
+constexpr uint8_t BTN_PIN = 0xFF;
+uint32_t btnPrev = 0;
+constexpr uint32_t BTN_COOLDOWN_MS = 200;
+
 uint32_t logPrev = 0;
 constexpr uint32_t LOG_INTERVAL_MS = 200;
 
@@ -74,15 +78,15 @@ float calcBalVel(const Vector3f &accel, const Vector3f &gyro, float ms) {
     //     result = 0;
     // }
 
-    if(ms - logPrev > LOG_INTERVAL_MS) {
-        net::log(
-            "\n"
-            "tiltInt: %f tiltIntInt: %f\n"
-            "thetaA: %f tiltRate: %f alpha: %f result: %f\n", 
-            tiltIntegral - IMU_TILT_OFFSET, tiltIntInt, thetaA - IMU_TILT_OFFSET, tiltRate, avgAlpha, result
-        );
-        logPrev = ms;
-    }
+    // if(ms - logPrev > LOG_INTERVAL_MS) {
+    //     net::log(
+    //         "\n"
+    //         "tiltInt: %f tiltIntInt: %f\n"
+    //         "thetaA: %f tiltRate: %f alpha: %f result: %f\n", 
+    //         tiltIntegral - IMU_TILT_OFFSET, tiltIntInt, thetaA - IMU_TILT_OFFSET, tiltRate, avgAlpha, result
+    //     );
+    //     logPrev = ms;
+    // }
 
     return result;
 }
@@ -113,37 +117,41 @@ constexpr float *tuneArray[] = {&k1, &k2, &k3, &k4, &k5, &kp, &kd};
 // values are -1 to 1 for x and y
 Vector2f joystick = Vector2f::Zero();
 
-void handleNetworkQueue() {
+void handleCommand(const Command &cmd) {
+    switch(cmd.type) {
+        case CommandType::Armed: {
+            armed = cmd.a;
+            tiltIntegral = 0;
+            tiltIntInt = 0;
+            integralStarted = false;
+            if(armed) {
+                net::log("Robot armed");
+            } else {
+                net::log("Robot disarmed");
+            }
+            break;
+        }
+        case CommandType::SetGain: {
+            int i = int(cmd.a);
+            if(i < sizeof(tuneArray) / sizeof(float)) {
+                *tuneArray[i] = cmd.b;
+                net::log("k[%d] = %f", i + 1, cmd.b);
+            }
+            break;
+        }
+        case CommandType::Joystick: {
+            joystick = Vector2f(cmd.a, cmd.b);
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+void handleQueue() {
     Command cmd;
     while(xQueueReceive(toControlQueue, &cmd, 0)) {
-        switch(cmd.type) {
-            case CommandType::Armed: {
-                armed = cmd.a;
-                tiltIntegral = 0;
-                tiltIntInt = 0;
-                integralStarted = false;
-                if(armed) {
-                    net::log("Robot armed");
-                } else {
-                    net::log("Robot disarmed");
-                }
-                break;
-            }
-            case CommandType::SetGain: {
-                int i = int(cmd.a);
-                if(i < sizeof(tuneArray) / sizeof(float)) {
-                    *tuneArray[i] = cmd.b;
-                    net::log("k[%d] = %f", i + 1, cmd.b);
-                }
-                break;
-            }
-            case CommandType::Joystick: {
-                joystick = Vector2f(cmd.a, cmd.b);
-                break;
-            }
-            default:
-                break;
-        }
+        handleCommand(cmd);
     }
 }
 
@@ -159,12 +167,19 @@ void controlTask(void*) {
         }
     }
 
+    pinMode(BTN_PIN, INPUT_PULLUP);
+
     motors::init();
     net::log("Control system initiatized");
 
     while(true) {
-        handleNetworkQueue();
+        handleQueue();
         unsigned int ms = millis();
+
+        if(digitalRead(BTN_PIN) == LOW && ms - btnPrev > BTN_COOLDOWN_MS) {
+            armed = !armed;
+            btnPrev = ms;
+        }
 
         gyro::read();
         Vector3f gyro = gyro::getGyro();
@@ -175,9 +190,13 @@ void controlTask(void*) {
             motors::stopMove(motors::RIGHT);
         } else {
             float vel = -calcBalVel(accel, gyro, ms);
-            vel = util::clamp(vel, -40, 40);
+            vel = 5;
             motors::moveByVelocity(motors::LEFT, vel);
             motors::moveByVelocity(motors::RIGHT, vel);
+
+            if(ms - logPrev > LOG_INTERVAL_MS) {
+                logPrev = ms;
+            }
         }
 
         if(ms - statusPrev > STATUS_INTERVAL_MS) {

@@ -16,7 +16,7 @@ export function ButtonPanel() {
 
   return(
     <div className='ButtonPanel'>
-      <button onClick={armedClick}>Toggle Arm</button>
+      <button onClick={armedClick} disabled={!connected}>Toggle Arm</button>
     </div>
   )
 }
