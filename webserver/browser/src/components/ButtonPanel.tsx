@@ -1,38 +1,16 @@
 import React from 'react';
 import { send } from '../websocket.ts';
-import { CommandType, RobotMsgType } from '../../../shared/messages.ts';
-import { subscribe } from '../websocket.ts';
-
-interface RobotStatus {
-  armed: boolean,
-  ota: boolean,
-}
+import { CommandType } from '../../../shared/messages.ts';
+import { useRobotStatus, type RobotStatus } from '../hook/RobotStatus.ts';
 
 export function ButtonPanel() {
-  const [status, setStatus] = React.useState<RobotStatus>();
-  
-  React.useEffect(() => {
-    return subscribe((msg) => {
-      if(msg.type !== RobotMsgType.Status) return;
-
-      let json;
-      try {
-        json = JSON.parse(msg.text);
-      } 
-      catch { return; }
-
-      setStatus({
-        armed: json.armed,
-        ota: json.ota,
-      })
-    });
-  }, [])
+  const { status, connected } = useRobotStatus();
 
   function armedClick() {
-    if(!status) {
+    if(!connected || !status) {
       return;
     }
-    const armed = status.armed ? "1" : "0";
+    const armed = status.armed ? "0" : "1";
     send({ type: CommandType.Armed, text: armed });
   }
 

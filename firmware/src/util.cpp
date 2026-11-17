@@ -21,4 +21,8 @@ int sign(float n) {
     }
 }
 
+const char* boolStr(bool b) {
+    return b ? "true" : "false";
+}
+
 } // namespace

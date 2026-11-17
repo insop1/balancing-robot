@@ -25,3 +25,7 @@ export function subscribe(fn: Listener) {
   listeners.add(fn);
   return () => { listeners.delete(fn); };
 }
+
+export function emit(msg: ServerMsg) {
+  for (const fn of listeners) fn(msg);
+}

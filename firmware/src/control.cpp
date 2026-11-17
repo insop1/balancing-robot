@@ -16,6 +16,7 @@ using Eigen::Vector2f;
 uint32_t logPrev = 0;
 constexpr uint32_t LOG_INTERVAL_MS = 200;
 
+// Keep STATUS_INTERVAL_MS matching with webserver/browser/src/hook/RobotStatus.ts
 uint32_t statusPrev = 0;
 constexpr uint32_t STATUS_INTERVAL_MS = 500;
 
@@ -182,10 +183,11 @@ void controlTask(void*) {
         if(ms - statusPrev > STATUS_INTERVAL_MS) {
             net::status(
                 "{"
-                "\"armed\":%d,"
-                "\"ota\":%d"
+                "\"armed\":%s,"
+                "\"ota\":%s"
                 "}", 
-                armed, otaActive.load()
+                util::boolStr(armed), 
+                util::boolStr(otaActive)
             );
             statusPrev = ms;
         }
