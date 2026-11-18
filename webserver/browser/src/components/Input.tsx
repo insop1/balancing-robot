@@ -1,6 +1,5 @@
 import React from 'react';
 import { send, emit } from '../websocket.ts';
-import './Input.css';
 import { CommandType, RobotMsgType } from '../../../shared/messages.ts';
 
 const commandMap: Record<string, CommandType | undefined> = {
@@ -29,7 +28,7 @@ export function Input() {
   }
 
   return (
-    <div className='Controls'>
+    <div className="input">
       <label htmlFor="text-box">Command: </label>
       <input
         id="text-box"

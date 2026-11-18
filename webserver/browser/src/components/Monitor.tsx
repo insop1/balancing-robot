@@ -1,6 +1,7 @@
 import React from 'react';
 import { subscribe } from '../websocket.ts';
 import { RobotMsgType } from '../../../shared/messages.ts';
+import './Monitor.css';
 
 type Props = { 
   title: string, 
