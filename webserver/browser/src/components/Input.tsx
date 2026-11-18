@@ -1,7 +1,7 @@
 import React from 'react';
-import { send } from '../websocket.ts';
+import { send, emit } from '../websocket.ts';
 import './Input.css';
-import { CommandType } from '../../../shared/messages.ts';
+import { CommandType, RobotMsgType } from '../../../shared/messages.ts';
 
 const commandMap: Record<string, CommandType | undefined> = {
   armed: CommandType.Armed,
@@ -14,14 +14,16 @@ export function Input() {
   const [text, setText] = React.useState('');
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
-    if (event.key === 'Enter') {
+    if(event.key === 'Enter') {
       const lowerText = text.toLowerCase();
       const args: string[] = lowerText.split(' ');
       
       const cType = commandMap[args[0]];
       setText('');
 
-      if (cType === undefined) return;
+      if(cType === undefined) {
+        emit({ type: RobotMsgType.Error, text: 'Invalid command' });
+      }
       send({ type: cType, text: args[1] });
     }
   }

@@ -14,8 +14,8 @@ constexpr uint32_t MAX_ACCEL = 1500;
 // LEFT = 0, RIGHT = 1
 Motor motorList[2] = {
     // ms1 (tied to ms3), ms2
-    {21, 19, nullptr}, 
-    {5, 18, nullptr},
+    {0xFF, 0xFF, nullptr}, 
+    {0xFF, 0xFF, nullptr},
 };
 
 }
@@ -35,8 +35,8 @@ void init() {
     left.stepper = engine.stepperConnectToPin(23);
     left.stepper->setDirectionPin(22);
 
-    right.stepper = engine.stepperConnectToPin(2);
-    right.stepper->setDirectionPin(15);
+    right.stepper = engine.stepperConnectToPin(16);
+    right.stepper->setDirectionPin(4);
 
     for(Motor &mot : motorList) {
         mot.stepper->setSpeedInHz(MAX_SPEED);

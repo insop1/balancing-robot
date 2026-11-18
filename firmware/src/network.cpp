@@ -117,13 +117,13 @@ void networkTask(void*) {
 
     ArduinoOTA.onStart([] {
         otaActive = true;
-        sendToServer({MsgType::Log, "OTA active"});
+        sendToServer(Msg{MsgType::Log, "OTA active"});
         vTaskDelay(pdMS_TO_TICKS(20));
     });
 
     ArduinoOTA.onError([] (ota_error_t) {
         otaActive = false;
-        sendToServer({MsgType::Error, "OTA failed"});
+        sendToServer(Msg{MsgType::Error, "OTA failed"});
     });
 
     robotBootID = esp_random();
