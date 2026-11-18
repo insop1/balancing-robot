@@ -1,7 +1,7 @@
 import { Controls } from './Controls.tsx';
-import { LogMonitor } from './LogMonitor.tsx';
-import { ErrorMonitor } from './ErrorMonitor.tsx'
 import './App.css';
+import { Monitor } from './Monitor.tsx';
+import { RobotMsgType } from '../../../shared/messages.ts';
 
 export function App() {
   return(
@@ -10,8 +10,8 @@ export function App() {
         <Controls />
       </section>
       <section className='monitors' aria-label='Monitors'>
-        <LogMonitor />
-        <ErrorMonitor />
+        <Monitor title="Log Monitor" type={RobotMsgType.Log} />
+        <Monitor title="Error Monitor" type={RobotMsgType.Error} />
       </section>
     </main>
   )

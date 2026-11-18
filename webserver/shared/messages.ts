@@ -4,6 +4,7 @@ export const RobotMsgType = {
   Error: 1,
   Status: 2,
 } as const;
+export type RobotMsgType = typeof RobotMsgType[keyof typeof RobotMsgType];
 
 // From server to robot
 export const CommandType = {
