@@ -8,6 +8,8 @@ type Props = {
   type: RobotMsgType,
 };
 
+const MAX_LINES = 500;
+
 export function Monitor({ title, type }: Props) {
   const [lines, setLines] = React.useState<string[]>([]);
   const preRef = React.useRef<HTMLPreElement>(null);
@@ -15,11 +17,17 @@ export function Monitor({ title, type }: Props) {
   React.useEffect(() => {
     return subscribe((msg) => {
       if(msg.type !== type) return;
-      setLines((prev) => [...prev, msg.text]);
+      setLines((prev) => {
+        const next = [...prev, msg.text];
+        if(next.length > MAX_LINES) {
+          next.shift();
+        }
+        return next;
+      });
     });
   }, [])
 
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     const monitor = preRef.current;
     if(monitor) monitor.scrollTop = monitor.scrollHeight;
   }, [lines])
