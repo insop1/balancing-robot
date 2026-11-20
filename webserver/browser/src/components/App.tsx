@@ -4,11 +4,17 @@ import { RobotMsgType } from '../../../shared/messages.ts';
 import { Input } from './Input.tsx';
 import { ButtonPanel } from './ButtonPanel.tsx';
 import { Joystick } from './Joystick.tsx';
+import { useRobotStatus } from '../hooks/RobotStatus.ts';
 
 export function App() {
+  const connected = useRobotStatus((s) => s.connected);
   return(
     <main className='layout'>
       <section className='controls' aria-label='Controls'>
+        <span>
+          <span className={connected ? 'online' : 'offline'}>●</span>
+          {' '}Robot: {connected ? 'connected' : 'disconnected'}
+        </span>
         <Input />
         <ButtonPanel />
         <Joystick />

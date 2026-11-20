@@ -7,15 +7,15 @@
 body {
   background-color: var(--bg1);
   color: var(--fg0);
+  margin: 0;
 }
 
 .layout {
   display: grid;
   grid-template-columns: 1fr 2fr;
-  height: 90vh;
-  padding: 0.5rem;
+  height: 100dvh;
+  padding: 0.25rem;
   box-sizing: border-box;
-
   font-size: 1rem;
 }
 
@@ -30,6 +30,15 @@ body {
 }
 
 .controls {
-  gap: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
   margin: 0.75rem;
+}
+
+.online {
+  color: #7ad66f;
+}
+.offline {
+color: #d66f6f;
 }
