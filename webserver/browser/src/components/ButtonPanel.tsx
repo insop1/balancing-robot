@@ -1,7 +1,7 @@
 import React from 'react';
 import { send } from '../websocket.ts';
 import { CommandType } from '../../../shared/messages.ts';
-import { useRobotStatus, type RobotStatus } from '../hook/RobotStatus.ts';
+import { useRobotStatus } from '../hooks/RobotStatus.ts';
 
 export function ButtonPanel() {
   const { status, connected } = useRobotStatus();
