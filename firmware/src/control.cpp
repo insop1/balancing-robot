@@ -129,7 +129,7 @@ void handleCommand(const Command &cmd) {
         }
         case CommandType::SetGain: {
             int i = int(cmd.a);
-            if(i < sizeof(tuneArray) / sizeof(float)) {
+            if(i >= 0 && i < sizeof(tuneArray) / sizeof(tuneArray[0])) {
                 *tuneArray[i] = cmd.b;
                 net::log("k[%d] = %f", i + 1, cmd.b);
             }
@@ -137,6 +137,14 @@ void handleCommand(const Command &cmd) {
         }
         case CommandType::Joystick: {
             joystick = Vector2f(cmd.a, cmd.b);
+            break;
+        }
+        case CommandType::Restart: {
+            motors::stopMove(motors::LEFT);
+            motors::stopMove(motors::RIGHT);
+            net::log("Restarting ESP32");
+            vTaskDelay(pdMS_TO_TICKS(50));
+            esp_restart();
             break;
         }
         default:
@@ -166,7 +174,7 @@ void controlTask(void*) {
     pinMode(BTN_PIN, INPUT_PULLDOWN);
 
     motors::init();
-    net::log("Control system initiatized");
+    net::log("Control system initialized");
 
     while(true) {
         handleQueue();

@@ -42,6 +42,9 @@ bool parseCommand(const TPacket &pck, Command *cmd) {
         case CommandType::Armed:
             cmd->a = atof(pck.text);
             break;
+        case CommandType::Restart:
+            // no formatting, just need the type
+            break;
         default:
             return false;
     }

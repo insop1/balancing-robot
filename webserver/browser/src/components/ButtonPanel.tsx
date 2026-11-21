@@ -14,9 +14,17 @@ export function ButtonPanel() {
     send({ type: CommandType.Armed, text: armed });
   }
 
+  function restartClick() {
+    if(!connected || !status) {
+      return;
+    }
+    send({ type: CommandType.Restart, text: "" })
+  }
+
   return(
     <div className='ButtonPanel'>
       <button onClick={armedClick} disabled={!connected}>Toggle Arm</button>
+      <button onClick={restartClick} disabled={!connected}>Restart ESP32</button>
     </div>
   )
 }
