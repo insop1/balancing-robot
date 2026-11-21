@@ -41,11 +41,14 @@ float tiltIntegral = 0;
 float tiltIntInt = 0;
 bool integralStarted = false;
 
+// Tuning constants, check result in calcBalVel
 float k1 = 10.0f;
 float k2 = 60.0f;
 float k3 = 15.0f;
 float k4 = 0.5f;
 float k5 = 40.0f;
+
+// This one is tuning constant for turnRate
 float k6 = 0.0f;
 
 float calcBalVel(const Vector3f &accel, const Vector3f &gyro, float ms) {
@@ -74,20 +77,11 @@ float calcBalVel(const Vector3f &accel, const Vector3f &gyro, float ms) {
 
     float result = (k1 * (tiltIntegral - IMU_TILT_OFFSET) + k2 * (thetaA - IMU_TILT_OFFSET) + k3 * tiltRate + k4 * avgAlpha + k5 * tiltIntInt);
 
-    // if(ms - logPrev > LOG_INTERVAL_MS) {
-    //     net::log(
-    //         "\n"
-    //         "tiltInt: %f tiltIntInt: %f\n"
-    //         "thetaA: %f tiltRate: %f alpha: %f result: %f\n", 
-    //         tiltIntegral - IMU_TILT_OFFSET, tiltIntInt, thetaA - IMU_TILT_OFFSET, tiltRate, avgAlpha, result
-    //     );
-    //     logPrev = ms;
-    // }
-
     return result;
 }
 
 // backup incase no time
+// ignore do not use
 float theta = 0;
 bool thetaSeeded = false;
 constexpr float filterK = 0.98f;
@@ -180,6 +174,7 @@ void controlTask(void*) {
         handleQueue();
         unsigned int ms = millis();
 
+        // toggle arm button logic
         if(digitalRead(BTN_PIN) == HIGH && ms - btnPrev > BTN_COOLDOWN_MS) {
             armed = !armed;
             if(armed) {

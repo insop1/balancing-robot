@@ -26,6 +26,7 @@ uint32_t robotSeq = 0;
 uint32_t serverLastBoot = 0;
 uint32_t serverLastSeq = 0;
 
+// For now we only use one device to connect to the robot, so IP stays simple
 constexpr char SERVER_IP[] = "192.168.4.2";
 constexpr uint16_t SERVER_PORT = 3103;
 

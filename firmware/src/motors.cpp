@@ -41,12 +41,6 @@ void init() {
     for(Motor &mot : motorList) {
         mot.stepper->setSpeedInHz(MAX_SPEED);
         mot.stepper->setAcceleration(MAX_ACCEL);
-
-        // pinMode(mot.ms2, OUTPUT);
-        // pinMode(mot.ms1, OUTPUT);
-        //
-        // digitalWrite(mot.ms1, LOW);
-        // digitalWrite(mot.ms2, LOW);
     }
 }
 
